@@ -1,0 +1,38 @@
+name: selfhosted-smoke
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, deb]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host identity
+        run: |
+          hostname; uname -m; cat /etc/os-release | head -2
+          echo "tool cache: ${AGENT_TOOLSDIRECTORY:-unset} / ${RUNNER_TOOL_CACHE:-unset}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python 3.12 works
+        run: |
+          python --version
+          python -c "import ssl, sqlite3, hashlib, lzma, ctypes; print('stdlib ok', ssl.OPENSSL_VERSION)"
+          python -m pip --version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node works
+        run: node --version && npm --version
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Go works
+        run: go version
+      - name: Docker + buildx work
+        run: |
+          docker version --format '{{.Server.Version}}'
+          docker buildx version
+          docker run --rm alpine:3 echo "container ok"
+      - name: Host tools
+        run: ffmpeg -version | head -1; gh --version | head -1; make --version | head -1
